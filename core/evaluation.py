@@ -1,6 +1,5 @@
-from dataclasses import dataclass
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
+from dataclasses import dataclass
 
 @dataclass
 class EvaluationMetrics:
@@ -9,12 +8,12 @@ class EvaluationMetrics:
     recall: float
     f1: float
 
-
 class ModelEvaluator:
-    def evaluate(self, true, pred):
+    """Computes standard classification metrics for model validation."""
+    def evaluate(self, y_true: list[int], y_pred: list[int]) -> EvaluationMetrics:
         return EvaluationMetrics(
-            accuracy_score(true, pred),
-            precision_score(true, pred),
-            recall_score(true, pred),
-            f1_score(true, pred),
+            accuracy=accuracy_score(y_true, y_pred),
+            precision=precision_score(y_true, y_pred, zero_division=0),
+            recall=recall_score(y_true, y_pred, zero_division=0),
+            f1=f1_score(y_true, y_pred, zero_division=0)
         )
