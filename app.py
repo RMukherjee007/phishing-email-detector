@@ -1,32 +1,39 @@
 import streamlit as st
-from core.classifier import EmailClassifier, ResultInterpreter
+from core.classifier import EmailClassifier
 
-st.set_page_config(page_title="Phishing Email Detector")
+st.set_page_config(page_title="AI Phishing Detector", page_icon="🛡️")
 
-if "example_loaded" not in st.session_state:
-    st.session_state.example_loaded = False
+@st.cache_resource
+def initialize_model():
+    # Placeholder: In production, load a larger dataset or a saved .pkl
+    clf = EmailClassifier()
+    demo_texts = [
+        "Are we still on for the project meeting at 3 PM?",
+        "URGENT: Your account access is restricted. Verify here: http://bit.ly/fake-auth",
+        "Please find the attached invoice for last month's services.",
+        "Your subscription has expired. Update billing now: http://netflix-secure.com"
+    ]
+    labels = [0, 1, 0, 1]
+    clf.train(demo_texts, labels)
+    return clf
 
-st.title("Phishing Email Detection")
+classifier = initialize_model()
 
-classifier = EmailClassifier()
-classifier.train(
-    ["hello meeting tomorrow", "urgent verify account http://fake.com"],
-    [0, 1],
-)
-interpreter = ResultInterpreter(classifier)
+st.title("🛡️ Phishing Email Detector")
+st.markdown("Analyze email content for suspicious patterns, URLs, and urgent language.")
 
-email = st.text_area(
-    "Email text",
-    value="URGENT: verify your account http://fake.com"
-    if st.session_state.example_loaded
-    else "",
-)
+email_input = st.text_area("Paste Email Text:", placeholder="Example: Your account is suspended...", height=200)
 
-if st.button("Load Example"):
-    st.session_state.example_loaded = True
-    st.rerun()
-
-if st.button("Analyze"):
-    result, details = interpreter.predict_with_details(email)
-    st.write(result.label_name, f"{result.confidence:.2%}")
-    st.write(details)
+if st.button("Analyze Content", type="primary"):
+    if email_input.strip():
+        result = classifier.predict(email_input)
+        
+        if result.label == 1:
+            st.error(f"Analysis: {result.label_name}")
+            st.warning(f"Confidence Score: {result.confidence:.2%}")
+            st.info("Flagged for: Suspicious URL patterns or urgent call-to-action language.")
+        else:
+            st.success(f"Analysis: {result.label_name}")
+            st.write(f"Confidence Score: {result.confidence:.2%}")
+    else:
+        st.info("Please enter email text to begin analysis.")
